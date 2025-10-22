@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="App Icon">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#646CFF"/>
+      <stop offset="1" stop-color="#42D392"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="url(#g)"/>
+  <path d="M20 42L28 22h8l8 20h-6l-1.6-4.5h-9.8L25 42h-5zM33.7 32.3l-2.7-7.5-2.7 7.5h5.4z" fill="white"/>
+</svg>
