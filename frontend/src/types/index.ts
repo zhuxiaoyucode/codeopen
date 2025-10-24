@@ -21,7 +21,7 @@ export interface Snippet {
   isPrivate: boolean;
   title?: string;
   createdAt: string;
-  creatorId?: string;
+  creator?: { _id: string; username: string; };
   isExpired?: boolean;
 }
 

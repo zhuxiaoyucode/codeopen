@@ -4,8 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import App from './App.tsx'
-import { store } from './store/store.ts'
+import App from './App'
+import { store } from './store/store'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

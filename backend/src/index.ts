@@ -4,19 +4,22 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
+
 import { connectDatabase } from './config/database';
 import authRoutes from './routes/auth';
 import snippetRoutes from './routes/snippets';
+import chatRoutes from './routes/chat';
 
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
 // 安全中间件
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost'],
   credentials: true,
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Authorization','Content-Type']
@@ -36,6 +39,9 @@ app.use(express.urlencoded({ extended: true }));
 // 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/snippets', snippetRoutes);
+app.use('/api/chat', chatRoutes);
+import sandboxRoutes from './routes/sandbox';
+app.use('/api/sandbox', sandboxRoutes);
 
 // 健康检查端点
 app.get('/api/health', (req, res) => {
@@ -63,7 +69,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 const startServer = async () => {
   try {
     await connectDatabase();
-    
+
     app.listen(PORT, () => {
       console.log(`🚀 服务器运行在端口 ${PORT}`);
       console.log(`📊 环境: ${process.env.NODE_ENV || 'development'}`);

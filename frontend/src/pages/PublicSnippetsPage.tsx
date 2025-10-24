@@ -74,6 +74,14 @@ const PublicSnippetsPage: React.FC = () => {
       render: (language: string) => <Tag color="blue">{language}</Tag>,
     },
     {
+      title: '创建者',
+      dataIndex: 'creator',
+      key: 'creator',
+      render: (creator?: { username: string }) => (
+        <Tag color="purple">{creator?.username || '匿名用户'}</Tag>
+      ),
+    },
+    {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -90,7 +98,7 @@ const PublicSnippetsPage: React.FC = () => {
       title: '操作',
       key: 'action',
       render: (record: Snippet) => (
-        <Space size="small">
+        <Space size="small"> 
           <Button 
             type="link" 
             icon={<EyeOutlined />} 
@@ -114,9 +122,9 @@ const PublicSnippetsPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
-      <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Space direction="vertical" style={{ width: '100%' }} size="large"> 
         <Card>
-          <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+          <Space style={{ width: '100%' }} justifyContent="space-between">
             <div>
               <Title level={2} style={{ margin: 0 }}>公开代码片段</Title>
               <Text type="secondary">浏览所有用户公开分享的代码片段</Text>

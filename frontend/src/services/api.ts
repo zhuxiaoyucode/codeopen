@@ -2,11 +2,13 @@ import axios from 'axios';
 import { Snippet, SnippetFormData, User } from '../types';
 
 const API_BASE_URL: string =
-  (import.meta as any)?.env?.VITE_API_BASE_URL ?? 'http://localhost:3001/api';
+  (import.meta as any)?.env?.VITE_API_BASE_URL ?? '/api';
+
+const API_TIMEOUT_MS: number = Number((import.meta as any)?.env?.VITE_API_TIMEOUT_MS ?? 60000);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: API_TIMEOUT_MS,
 });
 
 // 请求拦截器：添加token
@@ -59,6 +61,11 @@ export const snippetsAPI = {
     api.put(`/snippets/${id}`, snippetData),
   
   deleteSnippet: (id: string) => api.delete(`/snippets/${id}`),
+
+  runSandbox: (payload: { language: string; code: string }) =>
+    api.post('/sandbox/run', payload),
+  warmupSandbox: (languages?: string[]) =>
+    api.post('/sandbox/warmup', { languages: languages ?? [] }),
 };
 
 export default api;

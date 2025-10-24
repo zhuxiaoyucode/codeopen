@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu, Button, Space, Dropdown, Avatar } from 'antd';
+import { Layout, Menu, Button, Space, Dropdown, Avatar, Switch } from 'antd';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   CodeOutlined, 
@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { logout } from '../../store/slices/authSlice';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 const { Header: AntHeader } = Layout;
 
@@ -19,6 +20,7 @@ const AppHeader: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAppSelector((state) => state.auth);
+  const { mode, toggle } = useThemeMode();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -42,7 +44,7 @@ const AppHeader: React.FC = () => {
 
   return (
     <AntHeader style={{ 
-      background: '#fff', 
+      background: mode === 'dark' ? '#141414' : '#fff', 
       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
       position: 'sticky',
       top: 0,
@@ -86,18 +88,30 @@ const AppHeader: React.FC = () => {
             {
               key: '/create',
               label: <Link to="/create">创建片段</Link>
+            },
+            {
+              key: '/sandbox',
+              label: <Link to="/sandbox">在线运行</Link>
+            },
+            {
+              key: '/chat',
+              label: <Link to="/chat">全站讨论</Link>
             }
           ]}
         />
 
         {/* 用户操作区域 */}
         <Space size="middle">
+          <Switch
+            checkedChildren="暗色"
+            unCheckedChildren="亮色"
+            checked={mode === 'dark'}
+            onChange={() => toggle()}
+          />
           {user ? (
             <>
               <Link to="/create">
-                <Button type="primary" icon={<PlusOutlined />}>
-                  新建片段
-                </Button>
+                <Button type="primary" icon={<PlusOutlined />}>新建片段</Button>
               </Link>
               <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                 <Space style={{ cursor: 'pointer' }}>

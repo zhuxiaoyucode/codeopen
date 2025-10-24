@@ -1,5 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { nanoid } from 'nanoid';
+function generateId(length: number = 10): string {
+  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const bytes = Array.from({ length }, () => Math.floor(Math.random() * characters.length));
+  return bytes.map(i => characters[i]).join('');
+}
 
 export interface ISnippet extends Document {
   _id: string;
@@ -16,7 +20,7 @@ export interface ISnippet extends Document {
 const snippetSchema = new Schema<ISnippet>({
   _id: {
     type: String,
-    default: () => nanoid(10) // 生成10位短ID
+    default: () => generateId(10) // 生成10位短ID
   },
   content: {
     type: String,

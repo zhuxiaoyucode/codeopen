@@ -18,42 +18,45 @@ services:
       - codeshare-network
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
+      target: runner
+    image: codeshare-backend:latest
     container_name: codeshare-backend
     restart: unless-stopped
     environment:
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/codeshare?authSource=admin
+      MONGODB_URI: "mongodb://admin:password123@mongodb:27017/codeshare?authSource=admin"
       JWT_SECRET: your-super-secret-jwt-key-in-docker
       NODE_ENV: production
       PORT: 3001
       FRONTEND_URL: http://localhost:3000
+      SANDBOX_HOST_ROOT: /host_work/sandbox_work
+      SANDBOX_HOST_ABS: D:\codepen\sandbox_host
     ports:
       - "3001:3001"
     depends_on:
       - mongodb
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./sandbox_host:/host_work:rw
     networks:
       - codeshare-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: node:18-alpine
     container_name: codeshare-frontend
     restart: unless-stopped
+    working_dir: /app
     environment:
-      VITE_API_BASE_URL: http://localhost:3001/api
+      NODE_OPTIONS: --dns-result-order=ipv4first
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install && npm run dev -- --host"
     ports:
       - "3000:3000"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     networks:
       - codeshare-network
 
@@ -65,7 +68,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - frontend

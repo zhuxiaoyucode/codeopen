@@ -62,32 +62,46 @@ router.post('/register', async (req, res) => {
 
 // 用户登录
 router.post('/login', async (req, res) => {
+  console.log('--- 收到登录请求 /api/auth/login ---');
   try {
     const { email, password } = req.body;
+    console.log(`[1/5] 请求体解析: email=${email}`);
 
     if (!email || !password) {
+      console.error('[错误] 缺少邮箱或密码');
       return res.status(400).json({ error: '请填写邮箱和密码' });
     }
 
     // 查找用户
+    console.log('[2/5] 正在数据库中查找用户...');
     const user = await User.findOne({ email });
     if (!user) {
+      console.error(`[错误] 用户未找到: email=${email}`);
       return res.status(401).json({ error: '邮箱或密码错误' });
     }
+    console.log('[3/5] 用户查找成功: ' + user.username);
 
     // 验证密码
+    console.log('[4/5] 正在验证密码...');
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
+      console.error('[错误] 密码验证失败');
       return res.status(401).json({ error: '邮箱或密码错误' });
     }
+    console.log('[5/5] 密码验证成功');
 
     // 生成JWT令牌
-    const JWT_SECRET_LOGIN = process.env.JWT_SECRET || 'dev-default-jwt-secret';
+    console.log('[+] 准备生成JWT...');
+    const JWT_SECRET = process.env.JWT_SECRET || 'dev-default-jwt-secret';
+    if (!process.env.JWT_SECRET) {
+      console.warn('警告: 未在.env中找到JWT_SECRET, 使用默认值');
+    }
     const token = jwt.sign(
       { userId: user._id }, 
-      JWT_SECRET_LOGIN, 
+      JWT_SECRET, 
       { expiresIn: '7d' }
     );
+    console.log('[+] JWT生成成功');
 
     res.json({
       message: '登录成功',
@@ -98,9 +112,13 @@ router.post('/login', async (req, res) => {
         email: user.email
       }
     });
-  } catch (error) {
-    console.error('登录错误:', error);
-    res.status(500).json({ error: '登录失败' });
+  } catch (error: any) {
+    console.error('--- 登录逻辑发生严重错误 ---');
+    console.error('错误名称:', error.name);
+    console.error('错误信息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    console.error('--- 错误详情结束 ---');
+    res.status(500).json({ error: '登录失败，服务器内部错误' });
   }
 });
 

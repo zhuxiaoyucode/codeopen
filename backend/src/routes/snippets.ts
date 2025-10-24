@@ -58,7 +58,7 @@ router.post('/', authenticateToken, requireAuth, async (req: AuthRequest, res) =
  */
 router.get('/share/:id', async (req, res) => {
   try {
-    const snippet = await Snippet.findById(req.params.id);
+    const snippet = await Snippet.findById(req.params.id).populate('creatorId', 'username');
     if (!snippet) {
       return res.status(404).send('<!doctype html><title>Not Found</title><h1>代码片段不存在</h1>');
     }
@@ -118,7 +118,8 @@ router.get('/user/:userId', authenticateToken, requireAuth, async (req: AuthRequ
 
     const snippets = await Snippet.find({ creatorId: userId })
       .sort({ createdAt: -1 })
-      .select('_id content language expiresAt isPrivate title createdAt');
+      .populate('creatorId', 'username')
+      .select('_id content language expiresAt isPrivate title createdAt creatorId');
 
     res.json({
       snippets: snippets.map(snippet => ({
@@ -129,6 +130,7 @@ router.get('/user/:userId', authenticateToken, requireAuth, async (req: AuthRequ
         isPrivate: snippet.isPrivate,
         title: snippet.title,
         createdAt: snippet.createdAt,
+        creator: snippet.creatorId ? { _id: (snippet.creatorId as any)._id, username: (snippet.creatorId as any).username } : null, // 替换 creatorId
         isExpired: snippet.isExpired()
       }))
     });
@@ -146,7 +148,8 @@ router.get('/my', authenticateToken, requireAuth, async (req: AuthRequest, res) 
     const userId = req.user._id.toString();
     const snippets = await Snippet.find({ creatorId: userId })
       .sort({ createdAt: -1 })
-      .select('_id content language expiresAt isPrivate title createdAt');
+      .populate('creatorId', 'username')
+      .select('_id content language expiresAt isPrivate title createdAt creatorId');
 
     res.json({
       snippets: snippets.map(snippet => ({
@@ -157,6 +160,7 @@ router.get('/my', authenticateToken, requireAuth, async (req: AuthRequest, res) 
         isPrivate: snippet.isPrivate,
         title: snippet.title,
         createdAt: snippet.createdAt,
+        creator: snippet.creatorId ? { _id: (snippet.creatorId as any)._id, username: (snippet.creatorId as any).username } : null, // 替换 creatorId
         isExpired: snippet.isExpired()
       }))
     });
@@ -188,7 +192,8 @@ router.get('/public', async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)
-        .select('_id content language expiresAt isPrivate title createdAt'),
+        .populate('creatorId', 'username') // 关联查询创建者信息
+        .select('_id content language expiresAt isPrivate title createdAt creatorId'),
       Snippet.countDocuments(query)
     ]);
 
@@ -204,6 +209,7 @@ router.get('/public', async (req, res) => {
         isPrivate: snippet.isPrivate,
         title: snippet.title,
         createdAt: snippet.createdAt,
+        creator: snippet.creatorId ? { _id: (snippet.creatorId as any)._id, username: (snippet.creatorId as any).username } : null, // 替换 creatorId
         isExpired: snippet.isExpired()
       }))
     });
@@ -216,7 +222,7 @@ router.get('/public', async (req, res) => {
 // 获取代码片段详情
 router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const snippet = await Snippet.findById(req.params.id);
+    const snippet = await Snippet.findById(req.params.id).populate('creatorId', 'username');
     
     if (!snippet) {
       return res.status(404).json({ error: '代码片段不存在' });
@@ -243,7 +249,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
         isPrivate: snippet.isPrivate,
         title: snippet.title,
         createdAt: snippet.createdAt,
-        creatorId: snippet.creatorId
+        creator: snippet.creatorId ? { _id: (snippet.creatorId as any)._id, username: (snippet.creatorId as any).username } : null
       }
     });
   } catch (error) {
@@ -264,7 +270,8 @@ router.get('/user/:userId', authenticateToken, requireAuth, async (req: AuthRequ
 
     const snippets = await Snippet.find({ creatorId: userId })
       .sort({ createdAt: -1 })
-      .select('_id content language expiresAt isPrivate title createdAt');
+      .populate('creatorId', 'username')
+      .select('_id content language expiresAt isPrivate title createdAt creatorId');
 
     res.json({
       snippets: snippets.map(snippet => ({
@@ -275,6 +282,7 @@ router.get('/user/:userId', authenticateToken, requireAuth, async (req: AuthRequ
         isPrivate: snippet.isPrivate,
         title: snippet.title,
         createdAt: snippet.createdAt,
+        creator: snippet.creatorId ? { _id: (snippet.creatorId as any)._id, username: (snippet.creatorId as any).username } : null, // 替换 creatorId
         isExpired: snippet.isExpired()
       }))
     });
@@ -287,7 +295,7 @@ router.get('/user/:userId', authenticateToken, requireAuth, async (req: AuthRequ
 // 更新代码片段
 router.put('/:id', authenticateToken, requireAuth, async (req: AuthRequest, res) => {
   try {
-    const snippet = await Snippet.findById(req.params.id);
+    const snippet = await Snippet.findById(req.params.id).populate('creatorId', 'username');
     
     if (!snippet) {
       return res.status(404).json({ error: '代码片段不存在' });
@@ -334,7 +342,7 @@ router.put('/:id', authenticateToken, requireAuth, async (req: AuthRequest, res)
 // 删除代码片段
 router.delete('/:id', authenticateToken, requireAuth, async (req: AuthRequest, res) => {
   try {
-    const snippet = await Snippet.findById(req.params.id);
+    const snippet = await Snippet.findById(req.params.id).populate('creatorId', 'username');
     
     if (!snippet) {
       return res.status(404).json({ error: '代码片段不存在' });

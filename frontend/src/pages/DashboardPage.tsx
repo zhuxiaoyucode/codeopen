@@ -13,7 +13,7 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   
   const { user } = useAppSelector((state) => state.auth);
-  const { snippets, isLoading } = useAppSelector((state) => state.snippets);
+  const { userSnippets, isLoading } = useAppSelector((state) => state.snippets);
   
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [snippetToDelete, setSnippetToDelete] = useState<Snippet | null>(null);
@@ -86,6 +86,11 @@ const DashboardPage: React.FC = () => {
           {isPrivate ? '私密' : '公开'}
         </Tag>
       ),
+    },
+    {
+      title: '创建者',
+      key: 'creator',
+      render: () => <Tag color="purple">我的创建</Tag>,
     },
     {
       title: '创建时间',
@@ -170,7 +175,7 @@ const DashboardPage: React.FC = () => {
 
         {/* 片段列表 */}
         <Card>
-          {snippets.length === 0 ? (
+          {userSnippets.length === 0 ? (
             <Empty
               description="您还没有创建任何代码片段"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -186,7 +191,7 @@ const DashboardPage: React.FC = () => {
           ) : (
             <Table
               columns={columns}
-              dataSource={snippets}
+              dataSource={userSnippets}
               rowKey="id"
               loading={isLoading}
               pagination={{

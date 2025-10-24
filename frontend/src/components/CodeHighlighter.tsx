@@ -93,11 +93,10 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
           max-height: 600px;
         }
         
-        @media (prefers-color-scheme: dark) {
-          .prism-theme {
-            background: #2d2d2d;
-            color: #f8f8f2;
-          }
+        /* 跟随应用主题，而不是系统偏好 */
+        :root[data-theme='dark'] .prism-theme {
+          background: #1f1f1f;
+          color: #f8f8f2;
         }
         
         pre {

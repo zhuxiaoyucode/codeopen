@@ -5,6 +5,7 @@ import { CopyOutlined, EditOutlined, ArrowLeftOutlined } from '@ant-design/icons
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { getSnippet } from '../store/slices/snippetsSlice';
 import CodeHighlighter from '../components/CodeHighlighter';
+import SnippetChat from '../components/chat/SnippetChat';
 
 const { Title, Paragraph } = Typography;
 
@@ -64,9 +65,7 @@ const ViewSnippetPage: React.FC = () => {
           type="error"
           showIcon
           action={
-            <Button size="small" onClick={() => navigate('/')}>
-              返回首页
-            </Button>
+            <Button size="small" onClick={() => navigate('/')}>返回首页</Button>
           }
         />
       </div>
@@ -86,7 +85,7 @@ const ViewSnippetPage: React.FC = () => {
     );
   }
 
-  const isOwner = user && currentSnippet.creatorId === user.id;
+  const isOwner = user && currentSnippet.creator?._id === user.id;
   const isExpired =
     typeof currentSnippet.isExpired === 'boolean'
       ? currentSnippet.isExpired
@@ -100,27 +99,15 @@ const ViewSnippetPage: React.FC = () => {
         {/* 头部操作栏 */}
         <Card>
           <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-            <Button 
-              icon={<ArrowLeftOutlined />} 
-              onClick={() => navigate('/')}
-            >
-              返回
-            </Button>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/')}>返回</Button>
             
             <Space>
-              <Button 
-                icon={<CopyOutlined />}
-                onClick={copyToClipboard}
-                disabled={isExpired}
-              >
+              <Button icon={<CopyOutlined />} onClick={copyToClipboard} disabled={isExpired}>
                 {isCopied ? '已复制' : '复制代码'}
               </Button>
               
               {isOwner && (
-                <Button 
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`/dashboard?edit=${currentSnippet.id}`)}
-                >
+                <Button icon={<EditOutlined />} onClick={() => navigate(`/dashboard?edit=${currentSnippet.id}`)}>
                   编辑
                 </Button>
               )}
@@ -152,7 +139,11 @@ const ViewSnippetPage: React.FC = () => {
 
             <Paragraph type="secondary">
               创建时间: {formatDate(currentSnippet.createdAt)}
-              {currentSnippet.creatorId && ' • 由用户创建'}
+              {currentSnippet.creator && (
+                <span style={{ marginLeft: 8 }}>
+                  • {isOwner ? '我的创建' : `由用户 ${currentSnippet.creator.username} 创建`}
+                </span>
+              )}
             </Paragraph>
 
             {isExpired && (
@@ -175,6 +166,9 @@ const ViewSnippetPage: React.FC = () => {
             />
           </Card>
         )}
+
+        {/* 讨论区 */}
+        <SnippetChat snippetId={currentSnippet.id} />
       </Space>
     </div>
   );

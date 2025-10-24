@@ -4,6 +4,7 @@ import { snippetsAPI } from '../../services/api';
 
 const initialState: SnippetsState = {
   snippets: [],
+  userSnippets: [], // 新增用户代码片段列表
   currentSnippet: null,
   isLoading: false,
   error: null,
@@ -116,7 +117,7 @@ const snippetsSlice = createSlice({
       })
       .addCase(getUserSnippets.fulfilled, (state, action: PayloadAction<{ snippets: Snippet[] }>) => {
         state.isLoading = false;
-        state.snippets = action.payload.snippets;
+        state.userSnippets = action.payload.snippets;
       })
       .addCase(getUserSnippets.rejected, (state, action) => {
         state.isLoading = false;

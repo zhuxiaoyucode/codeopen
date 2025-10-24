@@ -1,30 +1,10 @@
-FROM node:18-alpine as builder
-
-WORKDIR /app
-
-# 复制package文件
-COPY package*.json ./
-
-# 安装依赖
-RUN npm ci
-
-# 复制源代码
-COPY . .
-
-# 构建应用
-RUN npm run build
-
-# 生产环境
 FROM nginx:alpine
+WORKDIR /usr/share/nginx/html
 
-# 复制构建文件到nginx
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# 复制nginx配置
+# 直接使用本地构建产物（确保在宿主已执行 `cd frontend && npm run build`）
+# 复制 dist 下所有内容，覆盖默认文件
+COPY dist/ /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# 暴露端口
 EXPOSE 3000
-
-# 启动nginx
 CMD ["nginx", "-g", "daemon off;"]
