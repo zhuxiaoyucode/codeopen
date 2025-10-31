@@ -52,7 +52,7 @@ export default function SandboxRunnerPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '24px auto', padding: '0 16px' }}>
-      <Card title="在线运行沙盒" bordered>
+      <Card title="在线运行沙盒" variant="outlined">
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <Select value={language} onChange={setLanguage} style={{ width: 260 }}>
             {languages.map(l => (

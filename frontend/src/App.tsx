@@ -13,6 +13,7 @@ import DashboardPage from './pages/DashboardPage';
 import PublicSnippetsPage from './pages/PublicSnippetsPage';
 import SandboxRunnerPage from './pages/SandboxRunnerPage';
 import GlobalChatPage from './pages/GlobalChatPage';
+import SettingsPage from './pages/SettingsPage';
 import { ThemeProvider, useThemeMode } from './theme/ThemeContext';
 import './App.css';
 
@@ -21,8 +22,10 @@ const { Content, Footer } = Layout;
 const AppContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user, isLoading } = useAppSelector((state) => state.auth);
-  const isAuthenticated = !!user || !!localStorage.getItem('token');
+  const isAuthenticated = !!user && !!localStorage.getItem('token');
   const { mode } = useThemeMode();
+
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -50,6 +53,7 @@ const AppContent: React.FC = () => {
             <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
             <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
             <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" replace />} />
+            <Route path="/settings" element={isAuthenticated ? <SettingsPage /> : <Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Content>

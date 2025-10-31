@@ -3,6 +3,8 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  avatar?: string;
+  avatarHistory?: string[];
 }
 
 export interface AuthState {
@@ -35,6 +37,7 @@ export interface SnippetFormData {
 
 export interface SnippetsState {
   snippets: Snippet[];
+  userSnippets: Snippet[];
   currentSnippet: Snippet | null;
   isLoading: boolean;
   error: string | null;

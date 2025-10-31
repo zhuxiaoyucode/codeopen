@@ -51,6 +51,18 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (userData: { username: string }, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.updateProfile(userData);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || '更新用户信息失败');
+    }
+  }
+);
+
 export const getCurrentUser = createAsyncThunk(
   'auth/me',
   async (_, { rejectWithValue }) => {
@@ -131,6 +143,19 @@ const authSlice = createSlice({
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
+      })
+      // 更新用户信息
+      .addCase(updateUserProfile.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action: PayloadAction<{ user: User; message: string }>) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   },
 });

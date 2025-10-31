@@ -43,6 +43,39 @@ export const authAPI = {
     api.post('/auth/register', userData),
   
   getCurrentUser: () => api.get('/auth/me'),
+  
+  sendVerificationCode: (email: string) =>
+    api.post('/auth/send-verification-code', { email }),
+  
+  resetPasswordWithCode: (data: { email: string; code: string; newPassword: string }) =>
+    api.post('/auth/reset-password-with-code', data),
+  
+  verifyCode: (email: string, code: string) =>
+    api.post('/auth/verify-code', { email, code }),
+  
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.post('/auth/change-password', data),
+  
+  updateProfile: (data: { username: string }) =>
+    api.put('/auth/update-profile', data),
+};
+
+// 头像相关API
+export const avatarAPI = {
+  uploadAvatar: (formData: FormData) =>
+    api.post('/avatar/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }),
+  
+  getAvatarHistory: () => api.get('/avatar/history'),
+  
+  selectAvatar: (avatarUrl: string) =>
+    api.post('/avatar/select', { avatarUrl }),
+  
+  deleteAvatar: (avatarUrl: string) =>
+    api.delete(`/avatar/history/${encodeURIComponent(avatarUrl)}`),
 };
 
 // 代码片段相关API

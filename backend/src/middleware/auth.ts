@@ -23,7 +23,11 @@ export const authenticateToken = async (
 
     const JWT_SECRET = process.env.JWT_SECRET || 'dev-default-jwt-secret';
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const user = await User.findById(decoded.userId).select('-password');
+    
+    // 对于需要密码验证的路由，我们需要包含密码字段
+    // 这里我们检查请求路径，如果是密码修改相关路由，就包含密码字段
+    const needsPassword = req.path.includes('/change-password');
+    const user = await User.findById(decoded.userId).select(needsPassword ? '' : '-password');
     
     if (!user) {
       req.user = null;

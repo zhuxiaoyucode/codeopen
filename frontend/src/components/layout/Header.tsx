@@ -7,7 +7,8 @@ import {
   UserOutlined, 
   LoginOutlined, 
   LogoutOutlined,
-  DashboardOutlined 
+  DashboardOutlined,
+  SettingOutlined 
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { logout } from '../../store/slices/authSlice';
@@ -33,6 +34,12 @@ const AppHeader: React.FC = () => {
       icon: <DashboardOutlined />,
       label: '我的片段',
       onClick: () => navigate('/dashboard')
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: '个人设置',
+      onClick: () => navigate('/settings')
     },
     {
       key: 'logout',
@@ -115,7 +122,10 @@ const AppHeader: React.FC = () => {
               </Link>
               <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                 <Space style={{ cursor: 'pointer' }}>
-                  <Avatar icon={<UserOutlined />} />
+                  <Avatar 
+                    src={user.avatar ? user.avatar : undefined} 
+                    icon={<UserOutlined />} 
+                  />
                   <span>你好，{user.username}</span>
                 </Space>
               </Dropdown>

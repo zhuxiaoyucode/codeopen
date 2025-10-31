@@ -1,4 +1,5 @@
-import type * as Monaco from 'monaco-editor';
+// @ts-ignore
+import * as Monaco from 'monaco-editor';
 
 // 记录已注册过的语言，避免重复注册导致重复建议
 const registeredLanguages = new Set<string>();
@@ -84,7 +85,7 @@ export function initializeMonaco(monaco: typeof Monaco, languages: string[] = []
     const snippets = LANGUAGE_SNIPPETS[lang] || [];
 
     monaco.languages.registerCompletionItemProvider(lang, {
-      provideCompletionItems: (model, position) => {
+      provideCompletionItems: (model: Monaco.editor.ITextModel, position: Monaco.Position) => {
         const suggestions: Monaco.languages.CompletionItem[] = snippets.map((s) => ({
           label: s.label,
           kind: monaco.languages.CompletionItemKind.Snippet,

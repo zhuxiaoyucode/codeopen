@@ -33,6 +33,8 @@ services:
       FRONTEND_URL: http://localhost:3000
       SANDBOX_HOST_ROOT: /host_work/sandbox_work
       SANDBOX_HOST_ABS: D:\codepen\sandbox_host
+      QQ_EMAIL_USER: 2911872658@qq.com
+      QQ_EMAIL_PASS: gwfmkpxscnrwddad
     ports:
       - "3001:3001"
     depends_on:

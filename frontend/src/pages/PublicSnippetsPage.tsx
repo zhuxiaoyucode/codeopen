@@ -124,12 +124,12 @@ const PublicSnippetsPage: React.FC = () => {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
       <Space direction="vertical" style={{ width: '100%' }} size="large"> 
         <Card>
-          <Space style={{ width: '100%' }} justifyContent="space-between">
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
             <div>
               <Title level={2} style={{ margin: 0 }}>公开代码片段</Title>
               <Text type="secondary">浏览所有用户公开分享的代码片段</Text>
             </div>
-          </Space>
+          </div>
         </Card>
 
         <Card>

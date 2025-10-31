@@ -302,7 +302,18 @@ router.put('/:id', authenticateToken, requireAuth, async (req: AuthRequest, res)
     }
 
     // 检查权限
-    if (snippet.creatorId?.toString() !== req.user._id.toString()) {
+    console.log('权限验证调试信息:', {
+      snippetCreatorId: snippet.creatorId,
+      snippetCreatorIdString: snippet.creatorId?._id?.toString(),
+      reqUserId: req.user._id,
+      reqUserIdString: req.user._id.toString(),
+      areEqual: snippet.creatorId?._id?.toString() === req.user._id.toString()
+    });
+    
+    if (!snippet.creatorId) {
+      return res.status(403).json({ error: '匿名创建的片段无法修改' });
+    }
+    if (snippet.creatorId._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: '无权限修改此片段' });
     }
 
@@ -349,7 +360,18 @@ router.delete('/:id', authenticateToken, requireAuth, async (req: AuthRequest, r
     }
 
     // 检查权限
-    if (snippet.creatorId?.toString() !== req.user._id.toString()) {
+    console.log('删除权限验证调试信息:', {
+      snippetCreatorId: snippet.creatorId,
+      snippetCreatorIdString: snippet.creatorId?._id?.toString(),
+      reqUserId: req.user._id,
+      reqUserIdString: req.user._id.toString(),
+      areEqual: snippet.creatorId?._id?.toString() === req.user._id.toString()
+    });
+    
+    if (!snippet.creatorId) {
+      return res.status(403).json({ error: '匿名创建的片段无法删除' });
+    }
+    if (snippet.creatorId._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: '无权限删除此片段' });
     }
 

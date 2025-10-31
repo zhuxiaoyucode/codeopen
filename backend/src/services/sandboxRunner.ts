@@ -100,8 +100,6 @@ export async function runInSandbox(req: SandboxRunRequest): Promise<SandboxRunRe
   const workDir = path.join(projectWorkRoot, instanceId);
   fs.mkdirSync(workDir, { recursive: true });
   const filePath = path.join(workDir, cfg.fileName);
-  // debug log: write location
-  console.log('[sandbox] writeFile ->', filePath);
   fs.writeFileSync(filePath, req.code, { encoding: 'utf8' });
 
   // docker run 要求宿主路径，若我们使用了容器内的 SANDBOX_HOST_ROOT (/host_work)，
