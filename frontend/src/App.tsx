@@ -14,6 +14,8 @@ import PublicSnippetsPage from './pages/PublicSnippetsPage';
 import SandboxRunnerPage from './pages/SandboxRunnerPage';
 import GlobalChatPage from './pages/GlobalChatPage';
 import SettingsPage from './pages/SettingsPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import PrivateSnippetsPage from './pages/PrivateSnippetsPage';
 import { ThemeProvider, useThemeMode } from './theme/ThemeContext';
 import './App.css';
 
@@ -25,8 +27,6 @@ const AppContent: React.FC = () => {
   const isAuthenticated = !!user && !!localStorage.getItem('token');
   const { mode } = useThemeMode();
 
-
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token && !user) {
@@ -34,9 +34,16 @@ const AppContent: React.FC = () => {
     }
   }, [dispatch, user]);
 
+  // 等待用户数据加载完成
   if (isLoading && !user) {
     return <div>加载中...</div>;
   }
+
+  // 管理员权限检查函数
+  const isAdmin = () => {
+    if (!isAuthenticated || !user) return false;
+    return user.role === 'admin';
+  };
 
   return (
     <ConfigProvider theme={{ algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm }}>
@@ -54,6 +61,8 @@ const AppContent: React.FC = () => {
             <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
             <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" replace />} />
             <Route path="/settings" element={isAuthenticated ? <SettingsPage /> : <Navigate to="/login" replace />} />
+            <Route path="/admin" element={isAuthenticated && isAdmin() ? <AdminDashboardPage /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/admin/private-snippets" element={isAuthenticated && isAdmin() ? <PrivateSnippetsPage /> : <Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Content>

@@ -173,19 +173,46 @@ router.get('/my', authenticateToken, requireAuth, async (req: AuthRequest, res) 
 /**
  * 浏览公开片段（分页）
  * 仅返回未过期的公开片段，按创建时间倒序
- * 查询参数：page（默认1）、pageSize（默认10）
+ * 查询参数：page（默认1）、pageSize（默认10）、search（搜索关键词）、language（语言筛选）
  */
 router.get('/public', async (req, res) => {
   try {
     const page = Number(req.query.page ?? 1);
     const pageSize = Number(req.query.pageSize ?? 10);
+    const search = req.query.search as string;
+    const language = req.query.language as string;
     const skip = Math.max(0, (page - 1) * pageSize);
     const now = new Date();
 
-    const query = {
+    // 构建查询条件
+    const query: any = {
       isPrivate: false,
       $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
     };
+
+    // 添加搜索条件
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      
+      // 使用 $and 来组合所有条件
+      query.$and = [
+        { isPrivate: false },
+        { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },
+        { $or: [
+          { title: { $regex: searchRegex } },
+          { content: { $regex: searchRegex } }
+        ]}
+      ];
+    }
+
+    // 添加语言筛选条件
+    if (language && language.trim()) {
+      if (query.$and) {
+        query.$and.push({ language: language.trim() });
+      } else {
+        query.language = language.trim();
+      }
+    }
 
     const [items, total] = await Promise.all([
       Snippet.find(query)
@@ -235,7 +262,41 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
 
     // 检查访问权限
     if (snippet.isPrivate) {
-      if (!req.user || snippet.creatorId?.toString() !== req.user._id.toString()) {
+      if (!req.user) {
+        return res.status(401).json({ error: '需要登录才能访问私密片段' });
+      }
+      
+      // 允许创建者和管理员访问私密片段
+      const isAdmin = req.user.role === 'admin';
+      
+      // 处理匿名用户创建的片段（creatorId为null）
+      let isCreator = false;
+      if (snippet.creatorId) {
+        // snippet.creatorId 已经被 populate，所以它是一个完整的用户对象
+        // 直接比较 _id 字段
+        const snippetCreatorId = snippet.creatorId._id ? snippet.creatorId._id.toString() : snippet.creatorId.toString();
+        const reqUserId = req.user._id.toString();
+        isCreator = snippetCreatorId === reqUserId;
+      } else {
+        // 如果片段没有创建者（匿名创建），则任何登录用户都不能访问
+        // 只有管理员可以访问匿名创建的私密片段
+        isCreator = false;
+      }
+      
+      console.log('访问权限验证调试信息:', {
+        snippetId: snippet._id,
+        snippetIsPrivate: snippet.isPrivate,
+        snippetCreatorId: snippet.creatorId,
+        snippetCreatorIdString: snippet.creatorId ? (snippet.creatorId._id ? snippet.creatorId._id.toString() : snippet.creatorId.toString()) : 'null',
+        reqUserId: req.user._id,
+        reqUserIdString: req.user._id.toString(),
+        isCreator: isCreator,
+        isAdmin: isAdmin,
+        reqUserRole: req.user.role
+      });
+      
+      // 修复权限逻辑：创建者和管理员都应该能够访问
+      if (!isCreator && !isAdmin) {
         return res.status(403).json({ error: '无权限访问此片段' });
       }
     }
@@ -258,39 +319,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-// 获取用户代码片段列表
-router.get('/user/:userId', authenticateToken, requireAuth, async (req: AuthRequest, res) => {
-  try {
-    const { userId } = req.params;
-    
-    // 只能查看自己的片段
-    if (userId !== req.user._id.toString()) {
-      return res.status(403).json({ error: '无权限查看此用户的片段' });
-    }
 
-    const snippets = await Snippet.find({ creatorId: userId })
-      .sort({ createdAt: -1 })
-      .populate('creatorId', 'username')
-      .select('_id content language expiresAt isPrivate title createdAt creatorId');
-
-    res.json({
-      snippets: snippets.map(snippet => ({
-        id: snippet._id,
-        content: snippet.content.substring(0, 200) + (snippet.content.length > 200 ? '...' : ''), // 预览内容
-        language: snippet.language,
-        expiresAt: snippet.expiresAt,
-        isPrivate: snippet.isPrivate,
-        title: snippet.title,
-        createdAt: snippet.createdAt,
-        creator: snippet.creatorId ? { _id: (snippet.creatorId as any)._id, username: (snippet.creatorId as any).username } : null, // 替换 creatorId
-        isExpired: snippet.isExpired()
-      }))
-    });
-  } catch (error) {
-    console.error('获取用户片段列表错误:', error);
-    res.status(500).json({ error: '获取片段列表失败' });
-  }
-});
 
 // 更新代码片段
 router.put('/:id', authenticateToken, requireAuth, async (req: AuthRequest, res) => {
@@ -302,18 +331,29 @@ router.put('/:id', authenticateToken, requireAuth, async (req: AuthRequest, res)
     }
 
     // 检查权限
+    const isAdmin = req.user.role === 'admin';
+    
+    // 处理匿名用户创建的片段（creatorId为null）
+    let isCreator = false;
+    if (snippet.creatorId) {
+      // 确保比较的是字符串格式的ID
+      const snippetCreatorId = snippet.creatorId._id ? snippet.creatorId._id.toString() : snippet.creatorId.toString();
+      const reqUserId = req.user._id.toString();
+      isCreator = snippetCreatorId === reqUserId;
+    }
+    
     console.log('权限验证调试信息:', {
       snippetCreatorId: snippet.creatorId,
-      snippetCreatorIdString: snippet.creatorId?._id?.toString(),
+      snippetCreatorIdString: snippet.creatorId ? (snippet.creatorId._id ? snippet.creatorId._id.toString() : snippet.creatorId.toString()) : 'null',
       reqUserId: req.user._id,
       reqUserIdString: req.user._id.toString(),
-      areEqual: snippet.creatorId?._id?.toString() === req.user._id.toString()
+      isCreator: isCreator,
+      isAdmin: isAdmin,
+      reqUserRole: req.user.role
     });
     
-    if (!snippet.creatorId) {
-      return res.status(403).json({ error: '匿名创建的片段无法修改' });
-    }
-    if (snippet.creatorId._id.toString() !== req.user._id.toString()) {
+    // 修复权限逻辑：创建者和管理员都应该能够修改
+    if (!isCreator && !isAdmin) {
       return res.status(403).json({ error: '无权限修改此片段' });
     }
 
@@ -360,18 +400,29 @@ router.delete('/:id', authenticateToken, requireAuth, async (req: AuthRequest, r
     }
 
     // 检查权限
+    const isAdmin = req.user.role === 'admin';
+    
+    // 处理匿名用户创建的片段（creatorId为null）
+    let isCreator = false;
+    if (snippet.creatorId) {
+      // 确保比较的是字符串格式的ID
+      const snippetCreatorId = snippet.creatorId._id ? snippet.creatorId._id.toString() : snippet.creatorId.toString();
+      const reqUserId = req.user._id.toString();
+      isCreator = snippetCreatorId === reqUserId;
+    }
+    
     console.log('删除权限验证调试信息:', {
       snippetCreatorId: snippet.creatorId,
-      snippetCreatorIdString: snippet.creatorId?._id?.toString(),
+      snippetCreatorIdString: snippet.creatorId ? (snippet.creatorId._id ? snippet.creatorId._id.toString() : snippet.creatorId.toString()) : 'null',
       reqUserId: req.user._id,
       reqUserIdString: req.user._id.toString(),
-      areEqual: snippet.creatorId?._id?.toString() === req.user._id.toString()
+      isCreator: isCreator,
+      isAdmin: isAdmin,
+      reqUserRole: req.user.role
     });
     
-    if (!snippet.creatorId) {
-      return res.status(403).json({ error: '匿名创建的片段无法删除' });
-    }
-    if (snippet.creatorId._id.toString() !== req.user._id.toString()) {
+    // 修复权限逻辑：创建者和管理员都应该能够删除
+    if (!isCreator && !isAdmin) {
       return res.status(403).json({ error: '无权限删除此片段' });
     }
 

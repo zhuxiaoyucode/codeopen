@@ -7,6 +7,11 @@ export interface IUser extends Document {
   password: string;
   avatar: string;
   avatarHistory: string[];
+  role: 'user' | 'admin';
+  isActive: boolean;
+  disabledUntil?: Date; // 禁用到期时间
+  lastLogin?: Date;
+  loginCount: number;
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -39,7 +44,26 @@ const userSchema = new Schema<IUser>({
   avatarHistory: [{
     type: String,
     default: []
-  }]
+  }],
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  disabledUntil: {
+    type: Date
+  },
+  lastLogin: {
+    type: Date
+  },
+  loginCount: {
+    type: Number,
+    default: 0
+  }
 }, {
   timestamps: { createdAt: true, updatedAt: false }
 });

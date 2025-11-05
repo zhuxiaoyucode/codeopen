@@ -36,12 +36,13 @@ services:
       QQ_EMAIL_USER: 2911872658@qq.com
       QQ_EMAIL_PASS: gwfmkpxscnrwddad
     ports:
-      - "3001:3001"
+      - "0.0.0.0:3001:3001"
     depends_on:
       - mongodb
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./sandbox_host:/host_work:rw
+      - ./backend/uploads:/app/uploads:rw
     networks:
       - codeshare-network
 
@@ -54,13 +55,19 @@ services:
       NODE_OPTIONS: --dns-result-order=ipv4first
     volumes:
       - ./frontend:/app
-    command: sh -c "npm install && npm run dev -- --host"
+    command: sh -c "cd dist && npx http-server . -p 3000 -a 0.0.0.0"
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     depends_on:
       - backend
     networks:
       - codeshare-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget --quiet --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   nginx:
     image: nginx:alpine

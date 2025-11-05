@@ -57,12 +57,19 @@ const ViewSnippetPage: React.FC = () => {
   }
 
   if (error) {
+    // 检查是否是权限错误
+    const isPermissionError = error.includes('无权限') || error.includes('Forbidden') || error.includes('403');
+    
     return (
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
         <Alert
-          message="错误"
-          description={error}
-          type="error"
+          message={isPermissionError ? "权限不足" : "错误"}
+          description={
+            isPermissionError 
+              ? "您没有权限访问此代码片段。这可能是私有片段，只有创建者或管理员可以查看。"
+              : error
+          }
+          type={isPermissionError ? "warning" : "error"}
           showIcon
           action={
             <Button size="small" onClick={() => navigate('/')}>返回首页</Button>
@@ -85,7 +92,8 @@ const ViewSnippetPage: React.FC = () => {
     );
   }
 
-  const isOwner = user && currentSnippet.creator?._id === user.id;
+  const isOwner = user && currentSnippet.creator?._id?.toString() === user.id?.toString();
+  const isAdmin = user?.role === 'admin';
   const isExpired =
     typeof currentSnippet.isExpired === 'boolean'
       ? currentSnippet.isExpired

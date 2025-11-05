@@ -3,7 +3,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/User';
-import { authenticateToken, AuthRequest } from '../middleware/auth';
+import { authenticateToken, AuthRequest, requireAuth } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -49,7 +49,8 @@ router.post('/register', async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        role: user.role
       }
     });
   } catch (error: any) {
@@ -77,11 +78,29 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: '邮箱或密码错误' });
     }
 
+    // 检查用户是否被禁用
+    if (!user.isActive) {
+      return res.status(403).json({ error: '您的账户已被禁用，请联系管理员' });
+    }
+
+    // 检查是否有禁用时间限制
+    if (user.disabledUntil && user.disabledUntil > new Date()) {
+      const remainingTime = Math.ceil((user.disabledUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      return res.status(403).json({ 
+        error: `您的账户已被临时禁用，将在 ${remainingTime} 天后解禁` 
+      });
+    }
+
     // 验证密码
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({ error: '邮箱或密码错误' });
     }
+
+    // 更新登录次数和最后登录时间
+    user.loginCount += 1;
+    user.lastLogin = new Date();
+    await user.save();
 
     // 生成JWT令牌
     const JWT_SECRET = process.env.JWT_SECRET || 'dev-default-jwt-secret';
@@ -98,7 +117,8 @@ router.post('/login', async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        role: user.role
       }
     });
   } catch (error: any) {
@@ -107,17 +127,14 @@ router.post('/login', async (req, res) => {
 });
 
 // 获取当前用户信息
-router.get('/me', authenticateToken, (req: AuthRequest, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: '未登录' });
-  }
-
+router.get('/me', [authenticateToken, requireAuth], (req: AuthRequest, res: express.Response) => {
   res.json({
     user: {
       id: req.user._id,
       username: req.user.username,
       email: req.user.email,
-      avatar: req.user.avatar
+      avatar: req.user.avatar,
+      role: req.user.role || 'user' // 如果role为undefined，默认返回'user'
     }
   });
 });
@@ -302,7 +319,9 @@ router.put('/update-profile', authenticateToken, async (req: AuthRequest, res) =
       user: {
         id: req.user._id,
         username: req.user.username,
-        email: req.user.email
+        email: req.user.email,
+        avatar: req.user.avatar,
+        role: req.user.role
       }
     });
   } catch (error: any) {

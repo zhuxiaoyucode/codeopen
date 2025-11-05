@@ -87,7 +87,7 @@ export const snippetsAPI = {
   
   getUserSnippets: (userId: string) => api.get(`/snippets/user/${userId}`),
 
-  getPublicSnippets: (params?: { page?: number; pageSize?: number }) =>
+  getPublicSnippets: (params?: { page?: number; pageSize?: number; search?: string; language?: string }) =>
     api.get('/snippets/public', { params }),
   
   updateSnippet: (id: string, snippetData: Partial<SnippetFormData>) =>
@@ -99,6 +99,27 @@ export const snippetsAPI = {
     api.post('/sandbox/run', payload),
   warmupSandbox: (languages?: string[]) =>
     api.post('/sandbox/warmup', { languages: languages ?? [] }),
+};
+
+// 管理员相关API
+export const adminAPI = {
+  getDashboardStats: () => api.get('/admin/dashboard/stats'),
+  
+  getUsers: (params?: { page?: number; limit?: number; search?: string }) =>
+    api.get('/admin/users', { params }),
+  
+  updateUserRole: (userId: string, role: 'user' | 'admin') =>
+    api.put(`/admin/users/${userId}/role`, { role }),
+  
+  updateUserStatus: (userId: string, isActive: boolean, disableDays?: number) =>
+    api.put(`/admin/users/${userId}/status`, { isActive, disableDays }),
+  
+  getSnippets: (params?: { page?: number; limit?: number; search?: string; status?: string; language?: string }) =>
+    api.get('/admin/snippets', { params }),
+  
+  deleteSnippet: (snippetId: string) => api.delete(`/admin/snippets/${snippetId}`),
+  
+  getLogs: () => api.get('/admin/logs'),
 };
 
 export default api;

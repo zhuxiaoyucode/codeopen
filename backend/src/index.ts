@@ -3,13 +3,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-
+import { createServer } from 'http';
 
 import { connectDatabase } from './config/database';
 import authRoutes from './routes/auth';
 import snippetRoutes from './routes/snippets';
 import chatRoutes from './routes/chat';
 import avatarRoutes from './routes/avatar';
+import adminRoutes from './routes/admin';
+import proxyRoutes from './routes/proxy';
+import { setupSocketServer } from './services/socket';
+import { userAutoEnableService } from './services/userAutoEnableService';
 
 import path from 'path';
 
@@ -30,10 +34,10 @@ app.use(cors({
   allowedHeaders: ['Authorization','Content-Type']
 }));
 
-// 速率限制 - 沙盒API特殊处理
+// 速率限制 - 开发环境放宽限制
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分钟
-  max: 1000, // 增加限制到1000个请求
+  max: 5000, // 开发环境放宽到5000个请求
   message: {
     error: '请求过于频繁，请稍后再试'
   },
@@ -44,7 +48,7 @@ const generalLimiter = rateLimit({
 // 沙盒API使用更宽松的限制
 const sandboxLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1分钟
-  max: 30 // 每分钟最多30个沙盒请求
+  max: 100 // 开发环境放宽到100个沙盒请求
 });
 
 app.use(generalLimiter);
@@ -54,7 +58,7 @@ app.use('/api/sandbox', sandboxLimiter);
 // 头像API使用更宽松的限制
 const avatarLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1分钟
-  max: 20 // 每分钟最多20个头像相关请求
+  max: 50 // 开发环境放宽到50个头像相关请求
 });
 app.use('/api/avatar', avatarLimiter);
 
@@ -67,9 +71,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/snippets', snippetRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/avatar', avatarRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/proxy', proxyRoutes);
 
 // 静态文件服务 - 提供头像文件访问
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// 额外的头像静态文件服务，确保avatars子目录也能访问
+app.use('/uploads/avatars', express.static(path.join(__dirname, '../uploads/avatars')));
 import sandboxRoutes from './routes/sandbox';
 app.use('/api/sandbox', sandboxRoutes);
 
@@ -100,8 +108,17 @@ const startServer = async () => {
   try {
     await connectDatabase();
 
-    app.listen(PORT, () => {
-      // 服务器启动成功
+    // 创建HTTP服务器并设置Socket.IO
+    const httpServer = createServer(app);
+    setupSocketServer(httpServer);
+
+    httpServer.listen(PORT, () => {
+      console.log(`🚀 服务器启动成功，端口: ${PORT}`);
+      console.log(`📡 Socket.IO 服务已启动`);
+      
+      // 启动用户自动解禁服务
+      userAutoEnableService.start();
+      console.log(`🔧 用户自动解禁服务已启动`);
     });
   } catch (error) {
     console.error('❌ 服务器启动失败:', error);

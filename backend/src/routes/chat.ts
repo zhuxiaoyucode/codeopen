@@ -15,9 +15,15 @@ router.get('/history', async (req, res) => {
     }
 
     const messages = await ChatMessage.find({ room })
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .limit(limit)
-      .lean();
+      .lean()
+      .then(msgs => msgs.reverse().map(msg => ({
+        ...msg,
+        userId: msg.userId ? msg.userId.toString() : null,
+        _id: msg._id.toString(),
+        createdAt: msg.createdAt.toISOString()
+      }))); // 反转顺序，让最新的消息在最后
 
     return res.json({ messages });
   } catch (error: any) {

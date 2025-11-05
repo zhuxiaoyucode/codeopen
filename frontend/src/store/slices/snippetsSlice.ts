@@ -150,6 +150,7 @@ const snippetsSlice = createSlice({
       .addCase(deleteSnippet.fulfilled, (state, action: PayloadAction<string>) => {
         state.isLoading = false;
         state.snippets = state.snippets.filter(s => s.id !== action.payload);
+        state.userSnippets = state.userSnippets.filter(s => s.id !== action.payload);
         if (state.currentSnippet?.id === action.payload) {
           state.currentSnippet = null;
         }

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Tag, Button, Space, Typography, message } from 'antd';
-import { EyeOutlined, CopyOutlined } from '@ant-design/icons';
+import { Card, Table, Tag, Button, Space, Typography, message, Input, Select } from 'antd';
+import { EyeOutlined, CopyOutlined, SearchOutlined, ClearOutlined } from '@ant-design/icons';
 import { snippetsAPI } from '../services/api';
 import { Snippet } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
+const { Search } = Input;
+const { Option } = Select;
 
 interface PublicListResponse {
   page: number;
@@ -21,18 +23,26 @@ const PublicSnippetsPage: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState<string>('');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
 
-  const fetchData = async (p = page, ps = pageSize) => {
+  const fetchData = async (p = page, ps = pageSize, search = searchText, language = selectedLanguage) => {
     try {
       setLoading(true);
-      const res = await snippetsAPI.getPublicSnippets({ page: p, pageSize: ps });
+      const res = await snippetsAPI.getPublicSnippets({ 
+        page: p, 
+        pageSize: ps,
+        search: search,
+        language: language
+      });
       const payload = res.data as PublicListResponse;
       setData(payload.snippets || []);
       setPage(payload.page);
       setPageSize(payload.pageSize);
       setTotal(payload.total);
     } catch (err: any) {
-      message.error(err?.response?.data?.error || '加载公开片段失败');
+      console.error('搜索失败:', err);
+      message.error(err?.response?.data?.error || '搜索失败，请检查网络连接');
     } finally {
       setLoading(false);
     }
@@ -58,6 +68,63 @@ const PublicSnippetsPage: React.FC = () => {
     } catch (error) {
       message.error('复制失败');
     }
+  };
+
+  // 使用防抖优化搜索性能
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>();
+
+  // 处理搜索 - 参考管理员界面实现
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+    setPage(1);
+    
+    // 清除之前的定时器
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    // 设置新的定时器
+    debounceRef.current = setTimeout(() => {
+      fetchData(1, pageSize, value, selectedLanguage);
+    }, 500);
+  };
+
+  // 实时搜索处理
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchText(value);
+    
+    // 清除之前的定时器
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    // 如果输入框为空，立即搜索
+    if (value === '') {
+      setPage(1);
+      fetchData(1, pageSize, '', selectedLanguage);
+    } else {
+      // 设置防抖搜索
+      debounceRef.current = setTimeout(() => {
+        setPage(1);
+        fetchData(1, pageSize, value, selectedLanguage);
+      }, 500);
+    }
+  };
+
+  // 处理语言筛选
+  const handleLanguageChange = (value: string) => {
+    setSelectedLanguage(value);
+    setPage(1);
+    fetchData(1, pageSize, searchText, value);
+  };
+
+  // 清除筛选条件
+  const handleClearFilters = () => {
+    setSearchText('');
+    setSelectedLanguage('');
+    setPage(1);
+    fetchData(1, pageSize, '', '');
   };
 
   const columns = [
@@ -133,6 +200,59 @@ const PublicSnippetsPage: React.FC = () => {
         </Card>
 
         <Card>
+          {/* 搜索和筛选区域 */}
+          <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Search
+                placeholder="搜索片段标题或内容"
+                onSearch={handleSearch}
+                style={{ width: 300 }}
+                enterButton={<SearchOutlined />}
+                value={searchText}
+                onChange={handleInputChange}
+              />
+              
+              <Select
+                placeholder="选择编程语言"
+                style={{ width: 150 }}
+                value={selectedLanguage || undefined}
+                onChange={handleLanguageChange}
+                allowClear
+              >
+                <Option value="javascript">JavaScript</Option>
+                <Option value="typescript">TypeScript</Option>
+                <Option value="python">Python</Option>
+                <Option value="java">Java</Option>
+                <Option value="cpp">C++</Option>
+                <Option value="csharp">C#</Option>
+                <Option value="php">PHP</Option>
+                <Option value="html">HTML</Option>
+                <Option value="css">CSS</Option>
+                <Option value="sql">SQL</Option>
+                <Option value="plaintext">纯文本</Option>
+              </Select>
+              
+              {(searchText || selectedLanguage) && (
+                <Button 
+                  type="link" 
+                  icon={<ClearOutlined />} 
+                  onClick={handleClearFilters}
+                  style={{ color: '#ff4d4f' }}
+                >
+                  清除筛选
+                </Button>
+              )}
+            </div>
+            
+            <div style={{ flex: 1, textAlign: 'right' }}>
+              <Text type="secondary">
+                共找到 {total} 个公开片段
+                {searchText && `，搜索关键词: "${searchText}"`}
+                {selectedLanguage && `，语言: ${selectedLanguage}`}
+              </Text>
+            </div>
+          </div>
+
           <Table
             columns={columns}
             dataSource={data}
@@ -145,10 +265,15 @@ const PublicSnippetsPage: React.FC = () => {
               onChange: (p, ps) => {
                 setPage(p);
                 setPageSize(ps);
-                fetchData(p, ps);
+                fetchData(p, ps, searchText, selectedLanguage);
               },
               showSizeChanger: true,
               showQuickJumper: true,
+            }}
+            locale={{
+              emptyText: searchText || selectedLanguage ? 
+                `没有找到符合条件的公开片段` : 
+                '暂无公开代码片段'
             }}
           />
         </Card>

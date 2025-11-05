@@ -5,6 +5,7 @@ export interface User {
   email: string;
   avatar?: string;
   avatarHistory?: string[];
+  role: 'user' | 'admin';
 }
 
 export interface AuthState {

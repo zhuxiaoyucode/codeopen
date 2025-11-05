@@ -25,7 +25,14 @@ const SnippetChat: React.FC<Props> = ({ snippetId }) => {
   const socketRef = useRef<Socket | null>(null);
 
   const backendUrl = useMemo(() => {
-    return (import.meta as any)?.env?.VITE_API_BASE_URL || 'http://localhost:3001';
+    // 在Docker环境中，使用容器名称作为后端地址
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // 本地开发环境
+      return (import.meta as any)?.env?.VITE_BACKEND_URL || 'http://localhost:3001';
+    }
+    
+    // Docker环境或通过Nginx代理访问
+    return (import.meta as any)?.env?.VITE_BACKEND_URL || 'http://backend:3001';
   }, []);
 
   useEffect(() => {

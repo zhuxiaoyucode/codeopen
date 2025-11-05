@@ -34,10 +34,23 @@ const SettingsPage: React.FC = () => {
 
   const getAvatarUrl = (avatarUrl?: string) => {
     if (!avatarUrl || avatarUrl === '') return '';
-    // 如果是相对路径，直接使用，因为Nginx已经配置了代理
+    
+    // 检查当前是否通过端口3000直接访问
+    const isDirectAccess = window.location.port === '3000';
+    
     if (avatarUrl.startsWith('/uploads/')) {
-      return avatarUrl;
+      if (isDirectAccess) {
+        // 端口3000直接访问时，需要拼接后端URL
+        const backendUrl = (import.meta as any)?.env?.VITE_BACKEND_URL || 
+                          (import.meta as any)?.env?.VITE_API_BASE_URL?.replace('/api', '') || 
+                          'http://localhost:3001';
+        return `${backendUrl}${avatarUrl}`;
+      } else {
+        // 通过Nginx代理时，使用相对路径
+        return avatarUrl;
+      }
     }
+    
     return avatarUrl;
   };
 

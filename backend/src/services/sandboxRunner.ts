@@ -51,8 +51,8 @@ const languageConfig: Record<SupportedLanguage, { image: string; fileName: strin
   cpp: { image: 'gcc:13.2.0', fileName: 'main.cpp', runCmd: ['sh', '-lc', '/usr/local/bin/g++ -O2 -std=c++17 /work/main.cpp -o /work/a.out && /work/a.out'] },
   csharp: { image: 'mono:6.12', fileName: 'main.cs', runCmd: ['sh', '-lc', '/usr/bin/mcs /work/main.cs -out:/work/a.exe && /usr/bin/mono /work/a.exe'] },
   swift: { image: 'swift:5.9', fileName: 'main.swift', runCmd: ['bash', '-lc', 'swiftc /work/main.swift -o /work/a.out && /work/a.out'] },
-  // 下列语言为非可执行或暂不支持编译执行，采用回显模式
-  typescript: { image: 'typescript-sandbox', fileName: 'main.ts', runCmd: ['sh', '-c', 'esbuild /work/main.ts --bundle --platform=node --outfile=/work/main.js && node /work/main.js'] },
+  // TypeScript使用Node.js镜像，通过ts-node运行
+  typescript: { image: 'node:18-alpine', fileName: 'main.ts', runCmd: ['sh', '-c', 'npm install -g ts-node typescript && ts-node /work/main.ts'] },
   html: null,
   css: null,
   sql: null,
